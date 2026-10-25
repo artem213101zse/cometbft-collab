@@ -1,0 +1,91 @@
+services:
+  init:
+    image: cometbft/cometbft:v0.34.35
+    user: root
+    entrypoint: ["sh", "-c", "tr -d '\\r' < /scripts/init.sh | sh"]
+    volumes:
+      - ./scripts:/scripts:ro
+      - build:/build
+
+  abci0:
+    build: ./abci
+    restart: unless-stopped
+
+  node0:
+    image: cometbft/cometbft:v0.34.35
+    user: root
+    command: ["start"]
+    environment:
+      CMTHOME: /build/node0
+    depends_on:
+      init: {condition: service_completed_successfully}
+      abci0: {condition: service_started}
+    restart: unless-stopped
+    ports: ["26657:26657"]
+    volumes:
+      - build:/build
+
+  abci1:
+    build: ./abci
+    restart: unless-stopped
+
+  node1:
+    image: cometbft/cometbft:v0.34.35
+    user: root
+    command: ["start"]
+    environment:
+      CMTHOME: /build/node1
+    depends_on:
+      init: {condition: service_completed_successfully}
+      abci1: {condition: service_started}
+    restart: unless-stopped
+    ports: ["26667:26657"]
+    volumes:
+      - build:/build
+
+  abci2:
+    build: ./abci
+    restart: unless-stopped
+
+  node2:
+    image: cometbft/cometbft:v0.34.35
+    user: root
+    command: ["start"]
+    environment:
+      CMTHOME: /build/node2
+    depends_on:
+      init: {condition: service_completed_successfully}
+      abci2: {condition: service_started}
+    restart: unless-stopped
+    ports: ["26677:26657"]
+    volumes:
+      - build:/build
+
+  abci3:
+    build: ./abci
+    restart: unless-stopped
+
+  node3:
+    image: cometbft/cometbft:v0.34.35
+    user: root
+    command: ["start"]
+    environment:
+      CMTHOME: /build/node3
+    depends_on:
+      init: {condition: service_completed_successfully}
+      abci3: {condition: service_started}
+    restart: unless-stopped
+    ports: ["26687:26657"]
+    volumes:
+      - build:/build
+
+  api:
+    build: ./api
+    environment:
+      COMET_RPCS: http://node0:26657,http://node1:26657,http://node2:26657,http://node3:26657
+    ports: ["8000:8000"]
+    depends_on: [node0, node1, node2, node3]
+    restart: unless-stopped
+
+volumes:
+  build:
